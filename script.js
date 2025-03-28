@@ -1,34 +1,21 @@
-// script.js
 document.getElementById("loginForm").addEventListener("submit", function(event) {
-    event.preventDefault();
+    event.preventDefault(); // Prevent default form submission
 
-    let username = document.getElementById("username").value.trim();
-    let password = document.getElementById("password").value.trim();
-    let isValid = true;
+    // Get input values
+    let username = document.getElementById("username").value;
+    let password = document.getElementById("password").value;
 
-    // Username validation
-    if (username === "") {
-        document.getElementById("usernameError").style.display = "block";
-        isValid = false;
+    // Hardcoded credentials (In real projects, use a database)
+    const correctUsername = "admin";
+    const correctPassword = "123";
+
+    if (username === correctUsername && password === correctPassword) {
+        // Save login status in sessionStorage
+        sessionStorage.setItem("loggedIn", "true");
+
+        // Redirect to dashboard
+        window.location.href = "dashboard.html";
     } else {
-        document.getElementById("usernameError").style.display = "none";
-    }
-
-    // Password validation
-    if (password === "") {
-        document.getElementById("passwordError").style.display = "block";
-        isValid = false;
-    } else {
-        document.getElementById("passwordError").style.display = "none";
-    }
-
-    // If valid, proceed with login (dummy authentication)
-    if (isValid) {
-        if (username === "admin" && password === "123") {
-            alert("Login successful!");
-            // Redirect or proceed further
-        } else {
-            alert("Invalid credentials! Try again.");
-        }
+        alert("Invalid username or password. Please try again.");
     }
 });
