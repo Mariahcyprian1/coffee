@@ -1,20 +1,44 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
-import psycopg2
-from reportlab.pdfgen import canvas
 import os
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask_sqlalchemy import SQLAlchemy
+from reportlab.pdfgen import canvas
 
+# Initialize Flask and SQLAlchemy
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key')  # Use environment variable for security
 
-# PostgreSQL connection
-def get_db_connection():
-    return psycopg2.connect(
-        host="localhost",
-        database="postgres",
-        user="myuser",
-        password="mypassword"
-    )
+# Use environment variable for DB URL
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgres://myuser:mypassword@localhost:5432/postgres')
 
+# Disable track modifications warning (optional)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# Define the models
+class Login(db.Model):
+    __tablename__ = 'login'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(120), nullable=False)
+
+class Menu(db.Model):
+    __tablename__ = 'menu'
+    coffee_id = db.Column(db.Integer, primary_key=True)
+    special_coffee = db.Column(db.String(100), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+
+class Booking(db.Model):
+    __tablename__ = 'booking'
+    id = db.Column(db.Integer, primary_key=True)
+    customer_name = db.Column(db.String(100), nullable=False)
+    phone = db.Column(db.String(20), nullable=False)
+    no_of_guests = db.Column(db.Integer, nullable=False)
+    coffee_id = db.Column(db.Integer, db.ForeignKey('menu.coffee_id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+
+# Define your routes
 @app.route('/')
 def index():
     error = request.args.get('error')  # Retrieve the error message from query parameters (if any)
@@ -31,12 +55,9 @@ def login():
             error = "Please enter both username and password"
         else:
             try:
-                conn = get_db_connection()
-                cursor = conn.cursor()
-                cursor.execute("SELECT * FROM login WHERE username = %s AND password = %s", (username, password))
-                user = cursor.fetchone()
-                conn.close()
-
+                # Use SQLAlchemy to query the database
+                user = Login.query.filter_by(username=username, password=password).first()
+                
                 if user:
                     session['user'] = username
                     return redirect(url_for('dashboard'))
@@ -65,11 +86,8 @@ def menu():
         return redirect(url_for('index'))
     
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        # Fetch all menu items from the database
-        cursor.execute("SELECT coffee_id, special_coffee, price, quantity FROM menu")
-        menu_items = cursor.fetchall()
+        # Fetch all menu items from the database using SQLAlchemy
+        menu_items = Menu.query.all()
 
         # Handle adding a new coffee item
         if request.method == 'POST':
@@ -78,16 +96,13 @@ def menu():
             quantity = request.form['quantity']
 
             # Insert the new coffee into the database
-            cursor.execute(
-                "INSERT INTO menu (special_coffee, price, quantity) VALUES (%s, %s, %s)",
-                (name, price, quantity)
-            )
-            conn.commit()
-            conn.close()
+            new_coffee = Menu(special_coffee=name, price=price, quantity=quantity)
+            db.session.add(new_coffee)
+            db.session.commit()
+
             flash("Coffee added successfully!", "success")
             return redirect(url_for('menu'))
 
-        conn.close()
         return render_template('menu.html', menu_items=menu_items)
     except Exception as e:
         flash("Error loading menu: " + str(e), "error")
@@ -99,13 +114,14 @@ def delete_coffee(coffee_id):
         return redirect(url_for('index'))
     
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        # Delete the coffee item from the database
-        cursor.execute("DELETE FROM menu WHERE coffee_id = %s", (coffee_id,))
-        conn.commit()
-        conn.close()
-        flash("Coffee deleted successfully!", "success")
+        # Delete the coffee item from the database using SQLAlchemy
+        coffee_to_delete = Menu.query.get(coffee_id)
+        if coffee_to_delete:
+            db.session.delete(coffee_to_delete)
+            db.session.commit()
+            flash("Coffee deleted successfully!", "success")
+        else:
+            flash("Coffee not found.", "error")
     except Exception as e:
         flash("Error deleting coffee: " + str(e), "error")
     
@@ -117,26 +133,16 @@ def edit_coffee(coffee_id):
         return redirect(url_for('index'))
 
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        coffee = Menu.query.get(coffee_id)
 
         if request.method == 'POST':
             # Update the price and availability
-            new_price = float(request.form['price'])
-            new_quantity = int(request.form['quantity'])
-            cursor.execute(
-                "UPDATE menu SET price = %s, quantity = %s WHERE coffee_id = %s",
-                (new_price, new_quantity, coffee_id)
-            )
-            conn.commit()
-            conn.close()
+            coffee.price = float(request.form['price'])
+            coffee.quantity = int(request.form['quantity'])
+            db.session.commit()
+
             flash("Coffee details updated successfully!", "success")
             return redirect(url_for('menu'))
-
-        # Fetch the current coffee details
-        cursor.execute("SELECT coffee_id, special_coffee, price, quantity FROM menu WHERE coffee_id = %s", (coffee_id,))
-        coffee = cursor.fetchone()
-        conn.close()
 
         if coffee:
             return render_template('edit_coffee.html', coffee=coffee)
@@ -164,60 +170,42 @@ def generate_pdf(booking_id, customer_name, phone, no_of_guests, coffee_id, quan
 @app.route('/booking', methods=['GET', 'POST'])
 def booking():
     if 'user' not in session:
-        return redirect(url_for('index'))  # Redirect to login if the user is not logged in
+        return redirect(url_for('index'))
 
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        # Fetch menu items for the dropdown
-        cursor.execute("SELECT coffee_id, special_coffee, price, quantity FROM menu")
-        menu_items = cursor.fetchall()
+        menu_items = Menu.query.all()
 
         if request.method == 'POST':
-            # Retrieve form data
             customer_name = request.form['customer_name']
             phone = request.form['phone']
             no_of_guests = int(request.form['no_of_guests'])
             coffee_id = int(request.form['coffee_id'])
             quantity = int(request.form['quantity'])
 
-            # Check if enough quantity is available
-            cursor.execute("SELECT quantity FROM menu WHERE coffee_id = %s", (coffee_id,))
-            result = cursor.fetchone()
-            if not result:
+            coffee = Menu.query.get(coffee_id)
+            if not coffee:
                 flash("Invalid coffee selection!", "error")
-                conn.close()
                 return render_template('booking.html', menu_items=menu_items)
 
-            available_quantity = result[0]
-            if quantity > available_quantity:
+            if quantity > coffee.quantity:
                 flash("Not enough quantity available!", "error")
-                conn.close()
                 return render_template('booking.html', menu_items=menu_items)
 
-            # Insert booking into the booking table
-            cursor.execute(
-                "INSERT INTO booking (customer_name, no_of_guests, phone, coffee_id, quantity) VALUES (%s, %s, %s, %s, %s) RETURNING id",
-                (customer_name, no_of_guests, phone, coffee_id, quantity)
-            )
-            booking_id = cursor.fetchone()[0]
+            # Insert booking
+            new_booking = Booking(customer_name=customer_name, no_of_guests=no_of_guests, phone=phone, coffee_id=coffee_id, quantity=quantity)
+            db.session.add(new_booking)
+            db.session.commit()
 
-            # Reduce the quantity in the menu table
-            cursor.execute(
-                "UPDATE menu SET quantity = quantity - %s WHERE coffee_id = %s",
-                (quantity, coffee_id)
-            )
-            conn.commit()
+            # Reduce the quantity in the menu
+            coffee.quantity -= quantity
+            db.session.commit()
 
-            # Generate a PDF receipt
-            generate_pdf(booking_id, customer_name, phone, no_of_guests, coffee_id, quantity)
+            # Generate PDF
+            generate_pdf(new_booking.id, customer_name, phone, no_of_guests, coffee_id, quantity)
 
             flash("Booking successful!", "success")
-            conn.close()
-            return redirect(url_for('receipt', booking_id=booking_id))
+            return redirect(url_for('receipt', booking_id=new_booking.id))
 
-        conn.close()
         return render_template('booking.html', menu_items=menu_items)
     except Exception as e:
         flash("Error processing booking: " + str(e), "error")
@@ -226,19 +214,9 @@ def booking():
 @app.route('/receipt/<int:booking_id>')
 def receipt(booking_id):
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT customer_name, phone, no_of_guests, coffee_id, quantity FROM booking WHERE id = %s", (booking_id,))
-        booking = cursor.fetchone()
-        conn.close()
-
+        booking = Booking.query.get(booking_id)
         if booking:
-            customer_name = booking[0]
-            phone = booking[1]
-            no_of_guests = booking[2]
-            coffee_id = booking[3]
-            quantity = booking[4]
-            return render_template('receipt.html', booking_id=booking_id, customer_name=customer_name, phone=phone, no_of_guests=no_of_guests, coffee_id=coffee_id, quantity=quantity)
+            return render_template('receipt.html', booking=booking)
         else:
             flash("Booking not found.", "error")
             return redirect(url_for('dashboard'))
