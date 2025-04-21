@@ -2,17 +2,17 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'coffee-flask-app'      // Set your image name
-        CONTAINER_NAME = 'coffee-prod-5001'  // Set your container name
-        HOST_PORT = '5018'                   // Host port
-        CONTAINER_PORT = '5000'              // Container port (Flask runs on port 5000)
+        IMAGE_NAME = 'coffee-flask-app'
+        CONTAINER_NAME = 'coffee-prod-5001'
+        HOST_PORT = '5001'
+        CONTAINER_PORT = '5000'
     }
 
     stages {
         stage('Clone Repo') {
             steps {
                 echo 'Cloning repository...'
-                // Jenkins will clone the repo automatically if using pipeline from SCM
+                checkout scm
             }
         }
 
@@ -33,7 +33,7 @@ pipeline {
             }
         }
 
-        stage('Run Container on Port 5018') {
+        stage('Run Container on Port 5001') {
             steps {
                 script {
                     sh """
