@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coffee Shop - Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">
+            <i class="fas fa-coffee"></i> Coffee Shop
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('dashboard') }}">Home</a></li>
+            <li><a href="{{ url_for('about') }}">About</a></li>
+            <li><a href="{{ url_for('menu') }}">Menu</a></li>
+            <li><a href="{{ url_for('booking') }}"><i class="fas fa-calendar-alt"></i> Booking</a></li>
+            <li><a href="{{ url_for('logout') }}">Logout</a></li>
+        </ul>
+    </header>
+
+    <main class="container">
+        <h1>Welcome to Coffee Shop</h1>
+        <p>Visit us and try your town's best coffee.</p>
+        <a href="{{ url_for('menu') }}" class="btn">Explore Menu</a>
+    </main>
+</body>
+</html>

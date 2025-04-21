@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coffee Shop - Booking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .booking-main {
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .btn {
+            background: #6F4E37;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .alert {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="logo">
+            <i class="fas fa-coffee"></i>
+            <h1>Coffee Shop</h1>
+        </div>
+        <nav>
+            <a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Home</a>
+            <a href="{{ url_for('menu') }}"><i class="fas fa-coffee"></i> Menu</a>
+            <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </nav>
+    </header>
+
+    <main class="booking-main">
+        <h2>Book Your Coffee</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('booking') }}">
+            <div class="form-group">
+                <label>Customer Name</label>
+                <input type="text" name="customer_name" required>
+            </div>
+            <div class="form-group">
+                <label>Phone</label>
+                <input type="text" name="phone" required>
+            </div>
+            <div class="form-group">
+                <label>Number of Guests</label>
+                <input type="number" name="no_of_guests" min="1" required>
+            </div>
+            <div class="form-group">
+                <label>Select Coffee</label>
+                <select name="coffee_id" required>
+                    {% for coffee in menu_items %}
+                    <option value="{{ coffee[0] }}">{{ coffee[1] }} - ${{ "%.2f"|format(coffee[2]) }} ({{ coffee[3] }} available)</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" name="quantity" min="1" required>
+            </div>
+            <button type="submit" class="btn">Book Now</button>
+        </form>
+    </main>
+</body>
+</html>

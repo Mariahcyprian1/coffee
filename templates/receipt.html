@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Receipt</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Booking Receipt</h1>
+        <div class="card mt-4">
+            <div class="card-body">
+                <p><strong>Booking ID:</strong> {{ booking_id }}</p>
+                <p><strong>Customer Name:</strong> {{ customer_name }}</p>
+                <p><strong>Phone:</strong> {{ phone }}</p>
+                <p><strong>Number of Guests:</strong> {{ no_of_guests }}</p>
+                <p><strong>Coffee ID:</strong> {{ coffee_id }}</p>
+                <p><strong>Quantity:</strong> {{ quantity }}</p>
+            </div>
+        </div>
+        <div class="text-center mt-4">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>

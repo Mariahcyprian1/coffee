@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About | Coffee Shop</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="about-page">
+    <header class="navbar">
+        <div class="logo">Coffee Shop</div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('menu') }}">Menu</a></li>
+            <li><a href="{{ url_for('logout') }}">Logout</a></li>
+        </ul>
+    </header>
+    <main class="container">
+        <h1>About Us</h1>
+        <p>Welcome to our cozy coffee shop where we serve the finest coffee and delicious pastries.</p>
+        <p>Founded in 2010, our coffee shop has been a community favorite for over a decade.</p>
+        <p>We source our beans directly from ethical farmers around the world</p>
+        <div class="team-members">
+            <div class="team-member">
+                <h3>Mariah Cyprian</h3>
+                <p>Founder & CEO</p>
+            </div>
+            <div class="team-member">
+                <h3>Jane Smith</h3>
+                <p>Head Barista</p>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2025 Coffee Shop. All rights reserved.</p>
+    </footer>
+</body>
+</html>
