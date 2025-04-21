@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #6b4f4f;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .container {
+            font-size: 24px;
+            font-weight: bold;
+            background: rgba(255, 243, 230, 0.9);
+            color: #4e342e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        .logout-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4e342e;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .logout-btn:hover {
+            background-color: #3e2723;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to the Dashboard</h1>
+        <p>You have successfully logged in.</p>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <script>
+        // Redirect to login page if not logged in
+        if (sessionStorage.getItem("loggedIn") !== "true") {
+            window.location.href = "index.html"; // Redirect to login page
+        }
+
+        function logout() {
+            sessionStorage.removeItem("loggedIn"); // Remove login status
+            window.location.href = "index.html"; // Redirect to login page
+        }
+    </script>
+</body>
+</html>
